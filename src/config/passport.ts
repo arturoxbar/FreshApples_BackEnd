@@ -5,6 +5,8 @@ import JWTStrategy, { ExtractJwt } from "passport-jwt";
 import User from "../models/User";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
+import { generateRandomCode } from "../utils/code";
+import { emailRegistro } from "./mails";
 dotenv.config({ path: ".env" });
 
 const verifyPassword = async (password: string, email: string) => {
@@ -29,7 +31,7 @@ passport.use(
       passReqToCallback: true,
     },
     async (req, email, password, done) => {
-      const { username, secret } = req.body;
+      const { username } = req.body;
       try {
         const existingEmail = await User.findOne({ email: email }).exec();
         if (existingEmail) {
@@ -45,8 +47,10 @@ passport.use(
             message: "The username is already register",
           });
         }
-        const newUser = new User({ email, password, username, secret });
+        const code = generateRandomCode()
+        const newUser = new User({ email, password, username, code });
         await newUser.save();
+        emailRegistro(email, code);
         return done(null, newUser);
       } catch (error) {
         console.log(error);
@@ -70,6 +74,9 @@ passport.use(
         }).exec();
         if (!ExistingUser) {
           return done(null, false, { message: "The user cannot be found" });
+        }
+        if (!ExistingUser.verified) {
+          return done(null, false, { message: "Tu cuenta no está verificada. Por favor, verifica tu correo electrónico." });
         }
         const validate = await verifyPassword(password, ExistingUser.email);
         if (!validate) {
