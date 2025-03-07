@@ -54,6 +54,42 @@ const login = async (req: AuthRequest, res: Response, next: NextFunction) => {
   )(req, res, next);
 };
 
+const verifyUser = async (req: AuthRequest, res: Response) => {
+  const { userInfo, code } = req.params;
+
+  if (!userInfo || !code) {
+    return res.status(400).json({ message: "userInfo and code are required" });
+  }
+
+  try {
+
+    const unverifiedUser = await User.findOne({
+      $or: [{ email: userInfo }, { username: userInfo }],
+      verified: false,
+    }).exec();
+
+    if (!unverifiedUser) {
+      return res.status(404).json({ message: "User not found or already verified" });
+    }
+
+    if (code !== unverifiedUser.code) {
+      return res.status(400).json({ message: "Invalid verification code" });
+    }
+
+    unverifiedUser.verified = true;
+    unverifiedUser.code = undefined;
+    await unverifiedUser.save();
+    return res.status(200).json({ message: "User verified successfully" });
+
+  } catch (error) {
+    console.error("Error during verification:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+};
+
 const deleteUser = async (req: AuthRequest, res: Response) => {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) {
@@ -133,4 +169,4 @@ const getUserInfo = async (req: AuthRequest, res: Response) => {
 
 
 
-export { singIn, login, EditUser, deleteUser, getUserInfo };
+export { singIn, login, EditUser, deleteUser, getUserInfo, verifyUser };
