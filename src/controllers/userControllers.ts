@@ -55,7 +55,8 @@ const login = async (req: AuthRequest, res: Response, next: NextFunction) => {
 };
 
 const verifyUser = async (req: AuthRequest, res: Response) => {
-  const { userInfo, code } = req.params;
+  const { code } = req.params;
+  const { userInfo } = req.body;
 
   if (!userInfo || !code) {
     return res.status(400).json({ message: "userInfo and code are required" });
@@ -72,7 +73,7 @@ const verifyUser = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: "User not found or already verified" });
     }
 
-    if (code !== unverifiedUser.code) {
+    if (code.toUpperCase() !== unverifiedUser.code) {
       return res.status(400).json({ message: "Invalid verification code" });
     }
 
