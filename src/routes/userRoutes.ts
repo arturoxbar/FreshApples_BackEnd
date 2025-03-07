@@ -5,7 +5,7 @@ import {
   EditUser,
   deleteUser,
   getUserInfo,
-
+  verifyUser
 } from "../controllers/userControllers";
 import authenticate from "../middlewares/auth";
 
@@ -23,5 +23,6 @@ router
   .put(authenticate, EditUser)
   .delete(authenticate, deleteUser)
   .get(authenticate, getUserInfo);
+router.patch("/user/:userInfo/:code", verifyUser);
 
 export default router;
