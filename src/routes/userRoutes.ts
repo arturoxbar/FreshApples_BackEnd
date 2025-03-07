@@ -23,6 +23,6 @@ router
   .put(authenticate, EditUser)
   .delete(authenticate, deleteUser)
   .get(authenticate, getUserInfo);
-router.patch("/user/:userInfo/:code", verifyUser);
+router.patch("/user/:code", verifyUser);
 
 export default router;
