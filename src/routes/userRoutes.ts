@@ -5,7 +5,10 @@ import {
   EditUser,
   deleteUser,
   getUserInfo,
-  verifyUser
+  verifyUser,
+  resetPassword,
+  sendResetCode,
+  verifyReset
 } from "../controllers/userControllers";
 import authenticate from "../middlewares/auth";
 
@@ -23,6 +26,12 @@ router
   .put(authenticate, EditUser)
   .delete(authenticate, deleteUser)
   .get(authenticate, getUserInfo);
+
 router.patch("/user/:code", verifyUser);
+
+router.post("/password/reset", sendResetCode);
+router.post("/password/reset/:code", verifyReset);
+router.patch("/password/reset", resetPassword);
+
 
 export default router;
