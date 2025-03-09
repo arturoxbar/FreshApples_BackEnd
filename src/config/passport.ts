@@ -75,13 +75,16 @@ passport.use(
         if (!ExistingUser) {
           return done(null, false, { message: "The user cannot be found" });
         }
-        if (!ExistingUser.verified) {
-          return done(null, false, { message: "Tu cuenta no está verificada. Por favor, verifica tu correo electrónico." });
-        }
+
         const validate = await verifyPassword(password, ExistingUser.email);
         if (!validate) {
           return done(null, false, { message: "the password doesn't match" });
         }
+        if (!ExistingUser.verified) {
+          return done(null, false, { message: "Your account is not verified, please check your email for the verification code." });
+        }
+
+
         return done(null, ExistingUser, { message: "Logged in successfully" });
       } catch (error) {
         return done(error);
