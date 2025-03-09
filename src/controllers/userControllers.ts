@@ -2,6 +2,8 @@ import type { Request, Response, NextFunction } from "express";
 import passport from "../config/passport";
 import User from "../models/User";
 import { generateToken, decryptToken } from "../utils/jwt";
+import { emailReset } from "../config/mails";
+import { generateRandomCode } from "../utils/code";
 
 interface AuthRequest extends Request {
   user?: any;
@@ -36,8 +38,12 @@ const login = async (req: AuthRequest, res: Response, next: NextFunction) => {
           .json({ message: "Internal server error", error: err.message });
       }
       if (!user) {
-        return res.status(401).json(info);
+        let statusCode = 401;
+        if (info.message === "The user cannot be found") {
+          statusCode = 404;
+        } return res.status(statusCode).json(info);
       }
+      console.log(user)
       try {
         req.login(user, { session: false }, async (error: Error) => {
           if (error) {
@@ -73,12 +79,12 @@ const verifyUser = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: "User not found or already verified" });
     }
 
-    if (code.toUpperCase() !== unverifiedUser.code) {
+    if (code.toUpperCase() !== unverifiedUser.verifyCode) {
       return res.status(400).json({ message: "Invalid verification code" });
     }
 
     unverifiedUser.verified = true;
-    unverifiedUser.code = undefined;
+    unverifiedUser.verifyCode = undefined;
     await unverifiedUser.save();
     return res.status(200).json({ message: "User verified successfully" });
 
@@ -106,6 +112,105 @@ const deleteUser = async (req: AuthRequest, res: Response) => {
     await User.findByIdAndDelete(req.user._id).exec();
     return res.json({ message: "User deleted", user });
   } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+};
+
+const sendResetCode = async (req: AuthRequest, res: Response) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
+
+  try {
+    const user = await User.findOne({ email }).exec();
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const code = generateRandomCode()
+
+    user.resetCode = code;
+
+    await user.save();
+    await emailReset(user.email, code)
+
+    return res.status(200).json({
+      message: "Reset code sent to email",
+    });
+
+  } catch (error) {
+    console.error("Error sending reset code:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+};
+
+const verifyReset = async (req: AuthRequest, res: Response) => {
+  const { code } = req.params;
+  const { userInfo } = req.body;
+
+  if (!userInfo || !code) {
+    return res.status(400).json({ message: "userInfo and code are required" });
+  }
+
+  try {
+
+    const resetUser = await User.findOne({
+      $or: [{ email: userInfo }, { username: userInfo }],
+      resetCode: code
+    }).exec();
+
+    if (!resetUser) {
+      return res.status(404).json({ message: "User not found/ code not found" });
+    }
+
+    if (code.toUpperCase() !== resetUser.resetCode) {
+      return res.status(400).json({ message: "Invalid verification code" });
+    }
+
+    return res.status(200).json({ message: "User verified successfully" });
+
+  } catch (error) {
+    console.error("Error during verification:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+
+}
+
+const resetPassword = async (req: AuthRequest, res: Response) => {
+  const { userInfo, newPassword } = req.body;
+
+  if (!userInfo || !newPassword) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  try {
+    const user = await User.findOne({
+      $or: [{ email: userInfo }, { username: userInfo }]
+    }).exec();
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.password = newPassword;
+    user.resetCode = undefined;
+    await user.save();
+
+    return res.status(200).json({ message: "Password updated successfully" });
+
+  } catch (error) {
+    console.error("Error resetting password:", error);
     return res.status(500).json({
       message: "Internal server error",
       error: error instanceof Error ? error.message : "Unknown error",
@@ -170,4 +275,4 @@ const getUserInfo = async (req: AuthRequest, res: Response) => {
 
 
 
-export { singIn, login, EditUser, deleteUser, getUserInfo, verifyUser };
+export { singIn, login, EditUser, deleteUser, getUserInfo, verifyUser, sendResetCode, verifyReset, resetPassword };
