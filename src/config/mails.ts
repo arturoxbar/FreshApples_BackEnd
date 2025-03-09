@@ -225,9 +225,9 @@ const emailReset = async (email: string, code: string) => {
                         Reset your password
                       </h1>
                       <p style="font-size: 16px; color: white">
-                        Use the following Code to verify your account: ${code}
+                        Use the following Code to verify your account
                       </p>
-                      <p style="font-size: 36px; color: red">4567</p>
+                      <p style="font-size: 36px; color: red">${code}</p>
                       <br />
                       <p style="margin: 0; font-size: 14px; color: #b3b3b3">
                         If you didn't reset your account password, please change your credentials.
