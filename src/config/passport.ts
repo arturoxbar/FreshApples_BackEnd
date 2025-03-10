@@ -48,7 +48,7 @@ passport.use(
           });
         }
         const code = generateRandomCode()
-        const newUser = new User({ email, password, username, code });
+        const newUser = new User({ email, password, username, verifyCode: code });
         await newUser.save();
         emailRegistro(email, code);
         return done(null, newUser);
@@ -78,7 +78,7 @@ passport.use(
 
         const validate = await verifyPassword(password, ExistingUser.email);
         if (!validate) {
-          return done(null, false, { message: "the password doesn't match" });
+          return done(null, false, { message: "The password doesn't match" });
         }
         if (!ExistingUser.verified) {
           return done(null, false, { message: "Your account is not verified, please check your email for the verification code." });
