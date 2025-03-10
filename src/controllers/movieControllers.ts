@@ -98,6 +98,121 @@ const searchMedia = async (req: AuthRequest, res: Response) => {
     }
 }
 
+const getPopularMedias = async (req: AuthRequest, res: Response) => {
+    try {
+        const popularMovies: any[] = [];
+        const popularSeries: any[] = [];
+
+        // Solicitudes para películas populares (páginas 1 a 3)
+        const movieRequests = [];
+        for (let page = 1; page <= 3; page++) {
+            movieRequests.push(
+                axiosInstance.get("/movie/popular", {
+                    params: { api_key: process.env.API_MOVIE_TOKEN, page },
+                })
+            );
+        }
+        const movieResponses = await Promise.all(movieRequests);
+        movieResponses.forEach((response: any) => {
+            const movies = response.data.results;
+            movies.forEach((movie: any) => {
+                // Si cuentas con un mapeo de géneros, aquí podrías transformar movie.genre_ids a nombres
+                popularMovies.push({
+                    title: movie.title,
+                    overview: movie.overview,
+                    poster: endpoints.imageBaseUrl + movie.poster_path,
+                    idApi: movie.id,
+                    genres: movie.genre_ids, // o mapea a nombres si lo deseas
+                });
+            });
+        });
+
+        // Solicitudes para series populares (páginas 1 a 2)
+        const seriesRequests = [];
+        for (let page = 1; page <= 2; page++) {
+            seriesRequests.push(
+                axiosInstance.get("/tv/popular", {
+                    params: { api_key: process.env.API_MOVIE_TOKEN, page },
+                })
+            );
+        }
+        const seriesResponses = await Promise.all(seriesRequests);
+        seriesResponses.forEach((response: any) => {
+            const series = response.data.results;
+            series.forEach((serie: any) => {
+                popularSeries.push({
+                    name: serie.name,
+                    overview: serie.overview,
+                    poster: endpoints.imageBaseUrl + serie.poster_path,
+                    idApi: serie.id,
+                    genres: serie.genre_ids,
+                });
+            });
+        });
+
+        const popularMedias = {
+            movies: popularMovies,
+            series: popularSeries,
+        };
+
+        return res.status(200).json(popularMedias);
+    } catch (error: any) {
+        console.error("Error in getPopularMedias:", error);
+        return res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+const getTrendingMedias = async (req: AuthRequest, res: Response) => {
+    try {
+        const trendingMovies: any[] = [];
+        const trendingSeries: any[] = [];
+
+        const trendingRequests = [];
+        for (let page = 1; page <= 10; page++) {
+            trendingRequests.push(
+                axiosInstance.get("/trending/all/week", {
+                    params: { api_key: process.env.API_MOVIE_TOKEN, page },
+                })
+            );
+        }
+        const trendingResponses = await Promise.all(trendingRequests);
+        trendingResponses.forEach((response: any) => {
+            const medias = response.data.results;
+            medias.forEach((media: any) => {
+                if (media.media_type === "movie") {
+                    trendingMovies.push({
+                        title: media.title,
+                        overview: media.overview,
+                        poster: endpoints.imageBaseUrl + media.poster_path,
+                        idApi: media.id,
+                        type: media.media_type,
+                        genres: media.genre_ids,
+                    });
+                } else if (media.media_type === "tv") {
+                    trendingSeries.push({
+                        name: media.name,
+                        overview: media.overview,
+                        poster: endpoints.imageBaseUrl + media.poster_path,
+                        idApi: media.id,
+                        type: media.media_type,
+                        genres: media.genre_ids,
+                    });
+                }
+            });
+        });
+
+        const trendingMedias = {
+            movies: trendingMovies,
+            series: trendingSeries,
+        };
+
+        return res.status(200).json(trendingMedias);
+    } catch (error: any) {
+        console.error("Error in getWeeklyMedias:", error);
+        return res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
 const getMovie = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     try {
@@ -234,4 +349,4 @@ const getSerie = async (req: AuthRequest, res: Response) => {
 };
 
 
-export { searchMedia, getMovie, getSerie, getOwnMedias }
+export { searchMedia, getMovie, getSerie, getOwnMedias, getPopularMedias, getTrendingMedias }
