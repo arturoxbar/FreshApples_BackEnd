@@ -41,8 +41,14 @@ const login = async (req: AuthRequest, res: Response, next: NextFunction) => {
         let statusCode = 401;
         if (info.message === "The user cannot be found") {
           statusCode = 404;
-        } return res.status(statusCode).json(info);
+          return res.status(statusCode).json(info);
+        }
+        if (info.message === "The password doesn't match") {
+          statusCode = 403;
+          return res.status(statusCode).json(info);
+        }
       }
+
       console.log(user)
       try {
         req.login(user, { session: false }, async (error: Error) => {
