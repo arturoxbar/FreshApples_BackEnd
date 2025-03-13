@@ -4,6 +4,7 @@ import { decryptToken } from "../utils/jwt";
 interface AuthRequest extends Request {
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     user?: any;
+    role?: any;
 }
 
 const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -14,11 +15,11 @@ const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
     }
 
     try {
-        const payload = decryptToken(token) as { _id: string };
-        req.user = { _id: payload._id };
-        next(); // Permitir que la solicitud continúe al siguiente middleware/controlador
+        const payload = decryptToken(token) as { _id: string, role?: string };
+        req.user = { _id: payload._id, role: payload.role },
+            next();
     } catch (error) {
-        return res.status(401).json({ message: "Invalid session. log In again" });
+        return res.status(401).json({ message: "Invalid session. log In again", error });
     }
 };
 
