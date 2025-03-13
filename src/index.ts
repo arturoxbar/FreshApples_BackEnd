@@ -2,6 +2,7 @@ import express from "express"; // se importa express
 import cors from "cors"; // se importa cors para que no haya problemas de comunicacion entre otras plataformas
 import userRoutes from "./routes/userRoutes";
 import movieRoutes from "./routes/movieRoutes";
+import reviewRouter from "./routes/reviewRoutes";
 import database from "./config/database";
 import session from "express-session";
 import passport from "passport";
@@ -24,6 +25,7 @@ app.use(passport.session()); // se usa el middleware para que express pueda usar
 
 app.use("/api/v1/users", userRoutes); // se declaran las rutas para los usuarios
 app.use("/api/v1/medias", movieRoutes);
+app.use("/api/v1/reviews", reviewRouter)
 
 try {
     database.on("error", (err: any) => {
