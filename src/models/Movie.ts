@@ -32,6 +32,7 @@ const moviewSchema = new mongoose.Schema<MovieInterface>({
     overview: {
         type: String,
         required: true,
+        default: "no overview"
     },
     tagline: {
         type: String,
@@ -47,7 +48,8 @@ const moviewSchema = new mongoose.Schema<MovieInterface>({
     },
     releaseDate: {
         type: String,
-        required: true,
+        required: false,
+        default: "Coming soon"
     },
     trailers: {
         type: [String],
