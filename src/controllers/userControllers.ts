@@ -29,42 +29,59 @@ const singIn = async (req: Request, res: Response, next: NextFunction) => {
 };
 
 const login = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  await passport.authenticate(
-    "login",
-    (err: Error | null, user: any | false, info: PassportInfo) => {
-      if (err) {
-        return res
-          .status(500)
-          .json({ message: "Internal server error", error: err.message });
-      }
-      if (!user) {
-        let statusCode = 401;
-        if (info.message === "The user cannot be found") {
-          statusCode = 404;
-          return res.status(statusCode).json(info);
-        }
-        if (info.message === "The password doesn't match") {
-          statusCode = 403;
-          return res.status(statusCode).json(info);
-        }
-      }
-
-      console.log(user)
-      try {
-        req.login(user, { session: false }, async (error: Error) => {
-          if (error) {
-            return next(error);
-          }
-          const body = { _id: user._id };
-          const token = generateToken(body);
-          return res.json({ user: user, token });
-        });
-      } catch (error) {
-        return next(error);
-      }
+  await passport.authenticate("login", (err: Error | null, user: any | false, info: PassportInfo) => {
+    if (err) {
+      return res.status(500).json({ message: "Internal server error", error: err.message });
     }
-  )(req, res, next);
+    if (!user) {
+      return res.status(400).json(info);
+    }
+    try {
+      req.login(user, { session: false }, async (error: Error) => {
+        if (error) {
+          return next(error);
+        }
+        const body = { _id: user._id, role: user.role };
+        const token = generateToken(body);
+        return res.json({ user, token });
+      });
+    } catch (error) {
+      return next(error);
+    }
+  })(req, res, next);
 };
+
+
+
+// const login = async (
+//   req: AuthRequest,
+//   res: Response,
+//   next: NextFunction
+// ) => {
+//   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+//   await passport.authenticate("login", (err: Error | null, user: any | false, info: PassportInfo) => {
+//     if (err) {
+//       return res
+//         .status(500)
+//         .json({ message: "Internal server error", error: err.message });
+//     }
+//     if (!user) {
+//       return res.status(400).json(info);
+//     }
+//     try {
+//       req.login(user, { session: false }, async (error: Error) => {
+//         if (error) {
+//           return next(error);
+//         }
+//         const body = { _id: user._id };
+//         const token = generateToken(body);
+//         return res.json({ user: user, token });
+//       });
+//     } catch (error) {
+//       return next(error);
+//     }
+//   })(req, res, next);
+// };
 
 const verifyUser = async (req: AuthRequest, res: Response) => {
   const { code } = req.params;
