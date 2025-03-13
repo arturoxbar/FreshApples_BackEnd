@@ -9,6 +9,7 @@ export interface UserInterface {
     verifyCode: string;
     resetCode: string;
     verified: boolean;
+    role: "user" | "critic";
     verifyPassword: (password: string) => Promise<boolean>;
 }
 
@@ -19,7 +20,9 @@ const UserSchema = new mongoose.Schema<UserInterface>({
     password: { type: String, required: true, unique: false },
     verifyCode: { type: String, required: false },
     resetCode: { type: String, required: false },
-    verified: { type: Boolean, require: true, default: false }
+    verified: { type: Boolean, require: true, default: false },
+    role: { type: String, required: true, default: "user" }
+
 
 });
 
